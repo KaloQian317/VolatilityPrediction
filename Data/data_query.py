@@ -9,6 +9,7 @@ def query_data (path, save_as_csv=True, save_as_pkl=True):
     """
     Query the newest 5-min intraday data for 60 days from Yahoo Finance.
 
+    path: path of the ticker names
     save_as_csv: whether to save the data as .csv file in local.
     save_as_pkl: whether to save the data as .pkl file in local.
 
