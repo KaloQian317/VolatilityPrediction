@@ -1,5 +1,6 @@
 import pandas as pd
 
+#################################### Data Adjustment ########################################################
 def drop_ticker (intraday_data, threshold_num):
     '''
     intraday_data: pandas dataframe of intraday data
@@ -13,6 +14,21 @@ def drop_ticker (intraday_data, threshold_num):
 
     return cleaned_intraday_data.reset_index().set_index('timestamp')
 
+def reconstruct_dataframe(cleaned_intraday_data):
+    # Reconstruct the tickers with columns less than 4680 back to 4680.
+    return
+def impute_missing_data (cleaned_intraday_data):
+    # Impute missing data for the reconstructed tickers.
+    return
+
 intraday_data = pd.read_pickle('russell_1000_intraday_data.pkl')
 threshold_num = 4600
-drop_ticker (intraday_data, threshold_num)
+cleaned_intraday_data = drop_ticker (intraday_data, threshold_num)
+print()
+
+#################################### Volatility ########################################################
+def realized_vol (cleaned_intraday_data):
+    # calculate daily realized volatility
+    return
+
+
