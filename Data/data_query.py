@@ -5,7 +5,7 @@ import datetime as dt
 from datetime import datetime
 import pytz
 
-def query_data (save_as_csv=True, save_as_pkl=True):
+def query_data (path, save_as_csv=True, save_as_pkl=True):
     """
     Query the newest 5-min intraday data for 60 days from Yahoo Finance.
 
@@ -14,7 +14,7 @@ def query_data (save_as_csv=True, save_as_pkl=True):
 
     return: a pandas dataframe of uncleaned 5-min intraday data.
     """
-    path = 'IWB_holdings.csv'
+#     path = 'IWB_holdings.csv'
 
     data = pd.read_csv(path,skiprows = 9)
     tickernames = data['Ticker'].values[:-2]
@@ -43,7 +43,7 @@ def query_data (save_as_csv=True, save_as_pkl=True):
 
     return intraday_data
 
-def update_data (use_original_ticker=True, save_as_csv=True, save_as_pkl=True):
+def update_data (path,use_original_ticker=True, save_as_csv=True, save_as_pkl=True):
     """
     Query the newest 5-min intraday data starting from the latest date in the old dataframe, and append the queried data
     onto the old dataframe.
@@ -54,7 +54,7 @@ def update_data (use_original_ticker=True, save_as_csv=True, save_as_pkl=True):
 
     return: a pandas dataframe of updated and uncleaned 5-min intraday data.
     """
-    intraday_data = pd.read_pickle('russell_1000_intraday_data.pkl')
+    intraday_data = pd.read_pickle(path)
     latest_date = (intraday_data.index.max().to_pydatetime().date() + dt.timedelta(days=1)).strftime('%Y-%m-%d') # Add one more day
     new_york_tz = pytz.timezone('America/New_York')
     current_date = datetime.now(new_york_tz).date().strftime('%Y-%m-%d')
@@ -95,4 +95,4 @@ def update_data (use_original_ticker=True, save_as_csv=True, save_as_pkl=True):
 
     return intraday_data
 
-update_data()
+# update_data()
