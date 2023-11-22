@@ -62,9 +62,22 @@ def reconstruct_dataframe(cleaned_data):
             reconstructed_data = curr         
     return reconstructed_data
 
-def impute_missing_data (cleaned_intraday_data):
+def impute_missing_data (reconstructed_data):
     # Impute missing data for the reconstructed tickers.
-    return
+    tickernames = recon_data['Ticker'].unique()
+    for ticker in tickernames:
+        curr = recon_data.loc[recon_data['Ticker']==ticker]
+        
+        # If the ticker contains missing data, linear interpolate it
+        if curr.iloc[:,1].isnull().any():
+            curr.iloc[:,1:]  = curr.iloc[:,1:].interpolate(method='linear')
+            recon_data.loc[recon_data['Ticker']==ticker] = curr
+            
+    # If there are some data can't be interpolated, e.g. missing data at the start or the end of the period
+    # Remove the ticker since interpolate won't give good guess
+    tickers_to_remove = recon_data[recon_data.isnull().any(axis=1)].Ticker.unique()
+    impute_data = recon_data[~recon_data['Ticker'].isin(tickers_to_remove)]
+    return impute_data
 
 intraday_data = pd.read_pickle('russell_1000_intraday_data.pkl')
 threshold_num = 4600
