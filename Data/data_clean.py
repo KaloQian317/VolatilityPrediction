@@ -7,6 +7,7 @@ def drop_ticker (intraday_data, threshold_num=None):
     threshold_num: int number that requires the function to drop tickers with number of data less than the threshold
     return: pandas dataframe of cleaned intraday data
     '''
+    data_length = len(intraday_data)
     if threshold_num is None:
         q1 = np.quantile(data_length, 0.25)
         q3 = np.quantile(data_length, 0.75)
@@ -63,21 +64,25 @@ def reconstruct_dataframe(cleaned_data):
     return reconstructed_data
 
 def impute_missing_data (reconstructed_data):
+    '''
+    reconstructed_data: pandas dataframe of cleaned intraday data after reconstructed with missing None value
+    return: pandas dataframe of imputed intraday data, missing value is linearly interpolated
+    '''
     # Impute missing data for the reconstructed tickers.
-    tickernames = recon_data['Ticker'].unique()
+    tickernames = reconstructed_data['Ticker'].unique()
     for ticker in tickernames:
-        curr = recon_data.loc[recon_data['Ticker']==ticker]
+        curr = reconstructed_data.loc[reconstructed_data['Ticker']==ticker]
         
         # If the ticker contains missing data, linear interpolate it
         if curr.iloc[:,1].isnull().any():
             curr.iloc[:,1:]  = curr.iloc[:,1:].interpolate(method='linear')
-            recon_data.loc[recon_data['Ticker']==ticker] = curr
+            reconstructed_data.loc[reconstructed_data['Ticker']==ticker] = curr
             
     # If there are some data can't be interpolated, e.g. missing data at the start or the end of the period
     # Remove the ticker since interpolate won't give good guess
-    tickers_to_remove = recon_data[recon_data.isnull().any(axis=1)].Ticker.unique()
-    impute_data = recon_data[~recon_data['Ticker'].isin(tickers_to_remove)]
-    return impute_data
+    tickers_to_remove = reconstructed_data[reconstructed_data.isnull().any(axis=1)].Ticker.unique()
+    imputed_data = reconstructed_data[~reconstructed_data['Ticker'].isin(tickers_to_remove)]
+    return imputed_data
 
 intraday_data = pd.read_pickle('russell_1000_intraday_data.pkl')
 threshold_num = 4600
