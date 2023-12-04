@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 #################################### Data Adjustment ########################################################
 def drop_ticker (intraday_data, threshold_num=None):
@@ -8,11 +9,14 @@ def drop_ticker (intraday_data, threshold_num=None):
     return: pandas dataframe of cleaned intraday data
     '''
     data_length = len(intraday_data)
+    # BUG: np.quantile only accept array-like real numbers
+    """
     if threshold_num is None:
         q1 = np.quantile(data_length, 0.25)
         q3 = np.quantile(data_length, 0.75)
         iqr = q3-q1
         threshold_num = q1-(1.5*iqr)
+    """
     tmp = intraday_data.groupby("Ticker").count().Open >= threshold_num
     ticker_name = tmp.loc[tmp==True].index
     cleaned_intraday_data = intraday_data.reset_index().set_index('Ticker').loc[ticker_name]
@@ -21,6 +25,7 @@ def drop_ticker (intraday_data, threshold_num=None):
     return cleaned_intraday_data.reset_index().set_index('timestamp')
 
 def reconstruct_dataframe(cleaned_data):
+    # Need to rewrite the method. Too long to run.
     '''
     cleaned_data: pandas dataframe of cleaned intraday data
     return: pandas dataframe of reconstructed intraday data, missing value is set to None
@@ -84,14 +89,24 @@ def impute_missing_data (reconstructed_data):
     imputed_data = reconstructed_data[~reconstructed_data['Ticker'].isin(tickers_to_remove)]
     return imputed_data
 
+"""
+# Clean the data and save in local
 intraday_data = pd.read_pickle('russell_1000_intraday_data.pkl')
 threshold_num = 4600
 cleaned_intraday_data = drop_ticker (intraday_data, threshold_num)
+reconstructed_intraday_data = reconstruct_dataframe(cleaned_intraday_data)
+reconstructed_intraday_data.to_pickle("reconstructed_intraday_data.pkl")
+imputed_intraday_data = impute_missing_data(reconstructed_intraday_data)
+imputed_intraday_data.to_pickle("imputed_intraday_data.pkl")
+
 print()
+"""
 
 #################################### Volatility ########################################################
 def realized_vol (cleaned_intraday_data):
     # calculate daily realized volatility
+
     return
 
-
+imputed_intrday_data = pd.read_pickle("imputed_intraday_data.pkl")
+realized_volatility = realized_vol(imputed_intrday_data)
