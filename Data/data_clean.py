@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import datetime as dt
 
 #################################### Data Adjustment ########################################################
 def drop_ticker (intraday_data, threshold_num=None):
@@ -103,10 +104,33 @@ print()
 """
 
 #################################### Volatility ########################################################
-def realized_vol (cleaned_intraday_data):
-    # calculate daily realized volatility
+def cal_realized_vol(cleaned_intraday_data):
+    # Define a function to calculate daily vol
+    def cal_intraday_R(table):
+        # Here, table is a pandas dataframe of cleaned intraday data but only for one ticker.
+        # This function gives intraday return for each 5-minute interval
+        tmp = table.copy()
+        tmp['Intraday Return'] = (tmp['Adj Close'] - tmp['Open'])/tmp['Open']
+        return tmp
+    # calculate intraday return for each 5-minute internal
+    intraday_data = cleaned_intraday_data.groupby('Ticker').apply(cal_intraday_R)
+    intraday_data['R2'] = intraday_data['Intraday Return'] ** 2
+    intraday_data = intraday_data.drop(columns='Ticker').reset_index('Ticker')
 
-    return
+    def cal_daily_rv(table):
+        # calculate daily rv and drop first and last 30 minutes for every day
+        tmp = table.copy()
+        def get_oneday_rvf1ticker(table):
+            #drop first and last 30 minutes for every day and calculate daily rv on that date for a ticker
+            table = table.loc[(table.index.time >= dt.time(10, 00)) & (table.index.time <= dt.time(15, 25))]
+            table['rv'] = (table['R2'].sum()) ** (1/2)
+            return table[['Ticker', 'rv']].iloc[0]
+        tmp = tmp.groupby(tmp.index.date).apply(get_oneday_rvf1ticker)
+        return tmp
 
-imputed_intrday_data = pd.read_pickle("imputed_intraday_data.pkl")
-realized_volatility = realized_vol(imputed_intrday_data)
+    rv = intraday_data.groupby('Ticker').apply(cal_daily_rv)
+    return rv
+
+imputed_intraday_data = pd.read_pickle("imputed_intraday_data.pkl")
+rv = cal_realized_vol(imputed_intraday_data)
+print(rv)
