@@ -66,6 +66,7 @@ def impute_missing_data (reconstructed_data):
     # There might be some data left without imputed at the start and the end of the day
     return imputed_data
 
+'''
 # Clean the data and save in local
 intraday_data = pd.read_pickle('russell_1000_intraday_data.pkl')
 cleaned_intraday_data = drop_ticker (intraday_data)
@@ -74,11 +75,14 @@ reconstructed_intraday_data.to_pickle("reconstructed_intraday_data.pkl")
 imputed_intraday_data = impute_missing_data(reconstructed_intraday_data)
 imputed_intraday_data.to_pickle("imputed_intraday_data.pkl")
 print()
-
+'''
 
 #################################### Volatility ########################################################
 def cal_realized_vol(cleaned_intraday_data):
-    # Define a function to calculate daily vol
+    '''
+    cleaned_intraday_data: pandas dataframe of intraday ticker data that are already cleaned and imputed
+    return: pandas dataframe of daily realized volatility for each ticker
+    '''
     def cal_intraday_R(table):
         # Here, table is a pandas dataframe of cleaned intraday data but only for one ticker.
         # This function gives intraday return for each 5-minute interval
@@ -104,6 +108,59 @@ def cal_realized_vol(cleaned_intraday_data):
     rv = intraday_data.groupby('Ticker').apply(cal_daily_rv)
     return rv
 
+'''
 imputed_intraday_data = pd.read_pickle("imputed_intraday_data.pkl")
-rv = cal_realized_vol(imputed_intraday_data)
-print(rv)
+rv = cal_realized_vol(imputed_intraday_data).drop(columns='Ticker').reset_index('Ticker')
+rv.to_pickle('rv.pkl')
+'''
+
+#################################### Daily Return ########################################################
+
+def cal_daily_return(cleaned_intraday_data):
+    '''
+    cleaned_intraday_data: pandas dataframe of intraday ticker data that are already cleaned and imputed
+    return: pandas dataframe of daily return for each ticker
+    '''
+    def get_daily_close_p(table):
+        return table['Adj Close'].iloc[-1]
+    daily_close_price = cleaned_intraday_data.groupby(['Ticker',cleaned_intraday_data.index.date]).apply(get_daily_close_p)
+    daily_close_price = daily_close_price.reset_index().rename(columns={'level_1': 'timestamp', 0: 'Closing Price'}).set_index('timestamp')
+
+    def get_daily_return(table):
+        table['dr'] = table['Closing Price'].pct_change()
+        return table[['Ticker', 'dr']]
+    daily_return = daily_close_price.groupby(['Ticker']).apply(get_daily_return)
+
+    return daily_return.drop('Ticker', axis=1).reset_index().set_index('timestamp')
+
+'''
+imputed_intraday_data = pd.read_pickle("imputed_intraday_data.pkl")
+dr = cal_daily_return(imputed_intraday_data)
+dr.to_pickle('dr.pkl')
+print(dr)
+'''
+
+#################################### Standardize ########################################################
+def standardize(rv, dr):
+    '''
+    rv: pandas dataframe of Daily realized volatility for each ticker
+    dr: pandas dataframe of Daily return for each ticker
+    return: pandas dataframe of standardized daily realized vol and return
+    '''
+    rv.index.name = 'timestamp'
+    tmp = dr.copy()
+    tmp = tmp.merge(rv, 'right', on=['timestamp', 'Ticker'])
+    # Standardize
+    def standardize_rv_dr (table):
+        table['dr_scaled'] = (table['dr'] - table['dr'].mean()) / np.sqrt(table['dr'].var())
+        table['rv_scaled'] = table['rv'] / np.sqrt((table['rv']**2).mean())
+        return table
+    tmp_ = tmp.groupby(['Ticker']).apply(standardize_rv_dr)
+    return tmp_.drop(columns='Ticker').reset_index().set_index('timestamp')
+
+'''
+rv = pd.read_pickle('rv.pkl')
+dr = pd.read_pickle('dr.pkl')
+standardized_rv_dr = standardize(rv, dr)
+standardized_rv_dr.to_pickle('standardized_rv_dr.pkl')
+'''

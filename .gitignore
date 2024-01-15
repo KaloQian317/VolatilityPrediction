@@ -3,3 +3,6 @@ russell_1000_intraday_data.csv
 russell_1000_intraday_data.pkl
 reconstructed_intraday_data.pkl
 imputed_intraday_data.pkl
+rv.pkl
+dr.pkl
+standardized_rv_dr.pkl

@@ -15,7 +15,6 @@ def query_data (path, save_as_csv=True, save_as_pkl=True):
 
     return: a pandas dataframe of uncleaned 5-min intraday data.
     """
-#     path = 'IWB_holdings.csv'
 
     data = pd.read_csv(path,skiprows = 9)
     tickernames = data['Ticker'].values[:-2]
@@ -96,4 +95,5 @@ def update_data (path,use_original_ticker=True, save_as_csv=True, save_as_pkl=Tr
 
     return intraday_data
 
-# update_data()
+path = 'russell_1000_intraday_data.pkl'
+update_data(path)
